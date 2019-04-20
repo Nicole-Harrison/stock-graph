@@ -1,63 +1,54 @@
 let fs = require('fs');
 let faker = require('faker');
 
-// stock info table
-// let header = ['stockId', 'ticker', 'company', 'relatedTags', 'ownerCount', 'recPercent', 'averageStock', 'changePercent', 'price']
-
 let letters = 'ABCDEFGFIJKLMNOPQRSTUVWXYZ'
-let seenTickers = new Set();
 
-let generateTicker = () => {
-  let randomIndex;
-  let ticker = '';
-
-  for (let i = 0; i < 5; i++) {
-    randomIndex = faker.random.number({min: 0, max: 25});
-    ticker += letters[randomIndex];
-  }
-  if (seenTickers.has(ticker)) {
-    return generateTicker();
-  } else {
-    seenTickers.add(ticker);
-    return ticker;
-  }
+let generateTicker = (i) => {
+  let place390625 = Math.trunc(i / 390625);
+  let place15625 = Math.trunc((i - 390625 * place390625) / 15625);
+  let place625 = Math.trunc((i - 390625 * place390625 - 15625 * place15625) / 625);
+  let place25 = Math.trunc((i - 390625 * place390625 - 15625 * place15625 - 625 * place625) / 25);
+  let place1 = i - 390625 * place390625 - 15625 * place15625 - 625 * place625 - 25 * place25;
+  
+  return letters[place390625] + letters[place15625] + letters[place625] + letters[place25] + letters[place1];
 }
 
-let count = 0;
-let generateRow = () => {
-  count++
-  return `${count}, ${generateTicker()}, ${faker.company.companyName()}, ${faker.lorem.word()}, ` +
-    `${faker.random.number({min: 100, max: 10000})}, ${faker.random.number({min: 0, max: 100})}, ` +
-    `${faker.random.number({min: 1, max: 5000})}, ${faker.random.number({min: 0, max: 100})}, ` +
-    `${faker.random.number({min: 1, max: 5000})} \n`
+// ['stockId', 'ticker', 'company', 'relatedTags', 'ownerCount', 'recPercent', 'averageStock', 'changePercent', 'price']
+let generateRow = (i) => {
+  return `${generateTicker(i)}, ${faker.company.companyName()}, ${faker.lorem.word()}, ` +
+  `${faker.random.number({min: 100, max: 10000})}, ${faker.random.number({min: 0, max: 100})}, ` +
+  `${faker.random.number({min: 1, max: 5000})}, ${faker.random.number({min: 0, max: 100})}, ` +
+  `${faker.random.number({min: 1, max: 5000})} \n`
 }
 
-// Write the data to the supplied writable stream one million times.
-// Be attentive to back-pressure.
-function generateData(writer, chunk, encoding, callback) {
-  let i = 10e6;
+function generateData(writer, chunk) {
+  let start = new Date();
+  let drainCount = 0;
+  let i = 1e7;
+  console.log('rows: ' + i)
+  
   write();
+
   function write() {
     let ok = true;
     do {
       i--;
       if (i === 0) {
-        // last time!
-        chunk = generateRow();
-        writer.write(chunk, encoding, callback);
+        console.log('drain count: ' + drainCount)
+        console.log('finished in ' + (new Date() - start)/1000 + ' seconds');
+        chunk = generateRow(i);
+        writer.write(chunk);
       } else {
-        // See if we should continue, or wait.
-        // Don't pass the callback, because we're not done yet.
-        if ((i % 10e4) === 0) {
-          console.log(i);
+        if ((i % 1e6) === 0) {
+          console.log('remaining rows: ' + i + ' time elapse: ' + (new Date() - start)/1000 + ' seconds');
+
         }
-        chunk += generateRow();
-        ok = writer.write(chunk, encoding);
+        chunk = generateRow(i);
+        ok = writer.write(chunk);
       }
     } while (i > 0 && ok);
     if (i > 0) {
-      // had to stop early!
-      // write some more once it drains
+      drainCount++;
       writer.once('drain', write);
     }
   }
@@ -65,4 +56,4 @@ function generateData(writer, chunk, encoding, callback) {
 
 let writer = fs.createWriteStream('./data.csv')
 
-generateData(writer, generateRow(), null , () => console.log('finished!'))
+generateData(writer, generateRow())
