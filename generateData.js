@@ -1,15 +1,21 @@
-let fs = require('fs');
-let faker = require('faker');
+const fs = require('fs');
+const zlib = require('zlib');
+const { Readable } = require('stream');
+const faker = require('faker');
 
-let letters = 'ABCDEFGFIJKLMNOPQRSTUVWXYZ'
-
+const letters = 'ABCDEFGFIJKLMNOPQRSTUVWXYZ'
 let generateTicker = (i) => {
-  let place390625 = Math.trunc(i / 390625);
-  let place15625 = Math.trunc((i - 390625 * place390625) / 15625);
-  let place625 = Math.trunc((i - 390625 * place390625 - 15625 * place15625) / 625);
-  let place25 = Math.trunc((i - 390625 * place390625 - 15625 * place15625 - 625 * place625) / 25);
-  let place1 = i - 390625 * place390625 - 15625 * place15625 - 625 * place625 - 25 * place25;
-  
+  let remainder = i;
+  let place390625 = Math.trunc(remainder / 390625); 
+  remainder -= 390625 * place390625
+  let place15625 = Math.trunc(remainder / 15625);
+  remainder -= 15625 * place15625
+  let place625 = Math.trunc(remainder / 625);
+  remainder -= 625 * place625;
+  let place25 = Math.trunc(remainder/ 25);
+  remainder -= 25 * place25
+  let place1 = remainder;
+
   return letters[place390625] + letters[place15625] + letters[place625] + letters[place25] + letters[place1];
 }
 
@@ -21,39 +27,14 @@ let generateRow = (i) => {
   `${faker.random.number({min: 1, max: 5000})} \n`
 }
 
-function generateData(writer, chunk) {
-  let start = new Date();
-  let drainCount = 0;
-  let i = 1e7;
-  console.log('rows: ' + i)
-  
-  write();
-
-  function write() {
-    let ok = true;
-    do {
-      i--;
-      if (i === 0) {
-        console.log('drain count: ' + drainCount)
-        console.log('finished in ' + (new Date() - start)/1000 + ' seconds');
-        chunk = generateRow(i);
-        writer.write(chunk);
-      } else {
-        if ((i % 1e6) === 0) {
-          console.log('remaining rows: ' + i + ' time elapse: ' + (new Date() - start)/1000 + ' seconds');
-
-        }
-        chunk = generateRow(i);
-        ok = writer.write(chunk);
-      }
-    } while (i > 0 && ok);
-    if (i > 0) {
-      drainCount++;
-      writer.once('drain', write);
+const inStream = new Readable({
+  read() {
+    this.push(generateRow(this.count--));
+    if (this.count === 0) {
+      this.push(null);
     }
   }
-}
+ })
 
-let writer = fs.createWriteStream('./data.csv')
-
-generateData(writer, generateRow())
+inStream.count = 1e4;
+inStream.pipe(zlib.createGzip()).pipe(fs.createWriteStream('./test.gz'));
