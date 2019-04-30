@@ -75,12 +75,12 @@ class LineChartContainer extends React.Component {
 
 LineChartContainer.propTypes = {
   chart: PropTypes.shape({
-    day: PropTypes.arrayOf(PropTypes.string),
-    week: PropTypes.arrayOf(PropTypes.string),
-    month: PropTypes.arrayOf(PropTypes.string),
-    threeMonth: PropTypes.arrayOf(PropTypes.string),
-    year: PropTypes.arrayOf(PropTypes.string),
-    fiveYear: PropTypes.arrayOf(PropTypes.string)
+    day: PropTypes.arrayOf(PropTypes.number),
+    week: PropTypes.arrayOf(PropTypes.number),
+    month: PropTypes.arrayOf(PropTypes.number),
+    threeMonth: PropTypes.arrayOf(PropTypes.number),
+    year: PropTypes.arrayOf(PropTypes.number),
+    fiveYear: PropTypes.arrayOf(PropTypes.number)
   }).isRequired
 };
 
