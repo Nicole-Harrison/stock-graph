@@ -1,11 +1,9 @@
 import React from 'react';
-// import axios from 'axios';
 import LineChartContainer from './LineChartContainer';
 import TimeFilter from './TimeFilter';
 import StockInfo from './StockInfo';
 import CompanyInfo from './CompanyInfo';
 import TagContainer from './TagContainer';
-import { BrowserRouter as Router, Route, Link } from "react-router-dom";
 import API from './api';
 
 class App extends React.Component {
@@ -22,16 +20,22 @@ class App extends React.Component {
     };
   }
   
-
   componentDidMount() {
     const { stockId } = this.props.match ? this.props.match.params : { stockId: null };
-    API.get((stockId && `/api/${stockId}`) || `/api/TSLA`)
+    API.get((stockId && `/api/${stockId}`) || `/api/AAAAB`)
     .then((response) => {
+      let stockInfo = {
+        stockCompany: response.data[0].company,
+        relatedTags: response.data[0].relatedtags,
+        noOfOwners: response.data[0].ownercount,
+        recommendationPercent: response.data[0].recpercent,
+      }
+
       this.setState({
-        stockInfo: response.data[0].stockInfo,
-        chartData: response.data[0].stockData,
-        averageStock: response.data[0].averageStock,
-        changePercent: response.data[0].changePercent
+        stockInfo: stockInfo,
+        chartData: response.data[0].prices,
+        averageStock: response.data[0].averagestock,
+        changePercent: response.data[0].changepercent
       })
     })
   }
