@@ -1,5 +1,4 @@
 import React from 'react';
-// import axios from 'axios';
 import LineChartContainer from './LineChartContainer';
 import TimeFilter from './TimeFilter';
 import StockInfo from './StockInfo';
@@ -22,7 +21,6 @@ class App extends React.Component {
     };
   }
   
-
   componentDidMount() {
     const { stockId } = this.props.match ? this.props.match.params : { stockId: null };
     API.get((stockId && `/api/${stockId}`) || `/api/TSLA`)
