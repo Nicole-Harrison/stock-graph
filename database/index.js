@@ -1,8 +1,10 @@
-const mongoose = require('mongoose');
+const Pool = require('pg').Pool
+const pool = new Pool({
+  user: 'me',
+  host: 'localhost',
+  database: 'api',
+  password: 'password',
+  port: 5432,
+});
 
-const mongoUri = 'mongodb://localhost/stock-chart';
-
-mongoose.connect(mongoUri);
-const db = mongoose.connection;
-
-module.exports = db;
+module.exports = pool;
